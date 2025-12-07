@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Antik kalkulátor – saját verzió</title>
+
+  <style>
+/* ==== STEAM DARK MODE ==== */
+
+body {
+  font-family: Arial, sans-serif;
+  background: #1b2838;      /* Steam háttér */
+  color: #c7d5e0;           /* világos kékes-szürke szöveg */
+  padding: 20px;
+}
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px,1fr));
+  gap: 12px;
+}
+
+/* KÁRTYÁK */
+.card {
+  background: #2a3f5a;      /* Steam doboz */
+  color: #c7d5e0;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.6);
+  text-align: center;
+}
+
+.card img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #16202d;       /* sötét háttér a képek mögött */
+}
+
+/* ÁRAK, SZÖVEGEK */
+.name {
+  font-size: 14px;
+  margin: 8px 0 4px;
+  min-height: 32px;
+  color: #e6f0f7;
+}
+
+.price {
+  color: #8bb4d9;
+}
+
+/* INPUTOK */
+.controls {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.controls input[type="number"],
+#percentInput {
+  background: #16202d;
+  color: #c7d5e0;
+  border: 1px solid #3b5878;
+  border-radius: 4px;
+  padding: 6px;
+  width: 60px;
+  text-align: center;
+}
+
+.controls input[type="number"]:focus,
+#percentInput:focus {
+  outline: 1px solid #66c0f4;
+}
+
+/* Láb dobozok */
+.footer {
+  margin-top: 18px;
+  background: #2a3f5a;
+  color: #c7d5e0;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.small {
+  font-size: 12px;
+  color: #9bb8d0;
+}
+
+.total {
+  font-weight: 700;
+  font-size: 18px;
+  color: #66c0f4;
+}
+
+  </style>
+</head>
+<body>
+
+  <h1>Antik kalkulátor</h1>
+  <p class="small">Adja meg a darabszámot, az összeg automatikusan frissül.</p>
+
+  <div id="grid" class="grid"></div>
+
+  <div class="footer">
+    <div>
+      <div class="small">Összes tétel:</div>
+      <div id="countAll" class="small">0</div>
+    </div>
+    <div>
+      <div class="small">Összesen:</div>
+      <div id="total" class="total">0 $</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <label class="small">Százalék (%): </label>
+      <input type="number" id="percentInput" min="0" max="100" value="0">
+    </div>
+    <div>
+      <div class="small">Százalék értéke:</div>
+      <div id="percentValue" class="total">0 $</div>
+    </div>
+  </div>
+
+<script>
+
+const items = [
+  {id: 'kereszt', name: 'Kereszt', image: 'images/Kereszt.png', value: 60000},
+  {id: 'gazmaszk', name: 'Gázmaszk', image: 'images/Gazmaszk.png', value: 30000},
+  {id: 'aranylanc', name: 'Arany nyaklánc', image: 'images/Arany_nyaklanc.png', value: 60000},
+  {id: 'haller_babo_medalja', name: 'Haller Babó medálja', image: 'images/Haller_Babo_medalja.png', value: 240000},
+  {id: 'antik_penz', name: 'Antik pénz', image: 'images/Antik_penz.png', value: 49200},
+  {id: 'arany_ora', name: 'Arany óra', image: 'images/Arany_ora.png', value: 50400},
+  {id: 'capafog_nyaklanc', name: 'Cápafog nyaklánc', image: 'images/Capafog_nyaklanc.png', value: 72000},
+  {id: 'antik_szobor', name: 'Antik szobor', image: 'images/Antik_szobor.png', value: 54000},
+  {id: 'antik_etkeszlet', name: 'Antik étkészlet', image: 'images/Antik_etkeszlet.png', value: 46200},
+  {id: 'antik_torzsi_maszk', name: 'Antik törzsi maszk', image: 'images/Antik_torzsi_maszk.png', value: 49200},
+  {id: 'kehely', name: 'Kehely', image: 'images/Kehely.png', value: 49200},
+  {id: 'igazgyongy', name: 'Igazgyöngy', image: 'images/Igazgyongy.png', value: 50400},
+  {id: 'aranymedal', name: 'Aranymedál', image: 'images/Arany_medal.png', value: 46800},
+  {id: 'maszk', name: 'Maszk', image: 'images/Maszk.png', value: 72000},
+  {id: 'haborus_loszer', name: 'Háborús lőszer', image: 'images/Haborus_loszer.png', value: 55200},
+  {id: 'koponya', name: 'Koponya', image: 'images/Koponya.png', value: 72000},
+  {id: 'femes_denes_pecsetgyuruje', name: 'Fémes Dénes Pecsétgyűrűje', image: 'images/Femes_Denes_Pecsetgyuruje.png', value: 264000},
+  {id: 'aranyrud', name: 'Aranyrúd', image: 'images/Aranyrud.png', value: 120000}
+];
+
+const grid = document.getElementById('grid');
+const totalEl = document.getElementById('total');
+const countAllEl = document.getElementById('countAll');
+
+function formatFt(n) {
+  return n.toLocaleString('hu-HU') + ' $';
+}
+
+function updateTotals() {
+  let total = 0;
+  let countAll = 0;
+
+  grid.querySelectorAll('input[type=number]').forEach(inp => {
+    const qty = Math.max(0, Math.floor(Number(inp.value) || 0));
+    const item = items.find(it => it.id === inp.dataset.id);
+
+    if (item) {
+      total += item.value * qty;
+      countAll += qty;
+    }
+  });
+
+  totalEl.textContent = formatFt(total);
+  countAllEl.textContent = countAll;
+
+  const percent = Math.max(0, Math.min(100, Number(percentInput.value) || 0));
+  const percentAmount = total * (percent / 100);
+  percentValue.textContent = formatFt(percentAmount);
+}
+
+function render() {
+
+  grid.innerHTML = '';
+
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const fallbackSVG =
+      `data:image/svg+xml;utf8,
+       <svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'>
+         <rect width='100%' height='100%' fill='#16202d'/>
+         <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'
+               fill='#8bb4d9' font-size='14'>${encodeURIComponent(item.name)}</text>
+       </svg>`;
+
+    card.innerHTML = `
+      <img src="${item.image}" alt="${item.name}"
+           onerror="this.src='${fallbackSVG}'">
+      <div class="name">${item.name}</div>
+      <div class="controls">
+        <input type="number" min="0" value="0" data-id="${item.id}">
+        <div class="price">${formatFt(item.value)}</div>
+      </div>
+    `;
+
+    grid.appendChild(card);
+  });
+
+  grid.querySelectorAll('input[type=number]').forEach(inp =>
+    inp.addEventListener('input', updateTotals)
+  );
+
+  updateTotals();
+}
+
+percentInput.addEventListener('input', updateTotals);
+
+render();
+
+</script>
+
+</body>
+</html>
